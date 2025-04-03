@@ -8,14 +8,33 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var showAuth = true
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            SaveWordView()
+                .tabItem {
+                    Label("Ввод", systemImage: "square.and.pencil")
+                }
+            
+            WordsListView()
+                .tabItem {
+                    Label("Слова", systemImage: "list.bullet")
+                }
+            
+            QuizView()
+                .tabItem {
+                    Label("Квиз", systemImage: "questionmark.circle")
+                }
+            
+            DictionaryView()
+                .tabItem {
+                    Label("Словарь", systemImage: "text.book.closed")
+                }
         }
-        .padding()
+        .sheet(isPresented: $showAuth) {
+            AuthSplashView()
+        }
     }
 }
 
