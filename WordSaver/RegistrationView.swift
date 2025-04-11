@@ -1,9 +1,7 @@
 import SwiftUI
 
 struct RegistrationView: View {
-    @State private var email = ""
-    @State private var password = ""
-    @State private var confirmPassword = ""
+    @StateObject private var viewModel = RegistrationViewModel()
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -14,32 +12,43 @@ struct RegistrationView: View {
                     .padding(.top, 32)
                 
                 VStack(spacing: 16) {
-                    TextField("Email", text: $email)
+                    TextField("Email", text: $viewModel.email)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .autocapitalization(.none)
                         .keyboardType(.emailAddress)
                     
-                    SecureField("Пароль", text: $password)
+                    SecureField("Пароль", text: $viewModel.password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    SecureField("Подтвердите пароль", text: $confirmPassword)
+                    SecureField("Подтвердите пароль", text: $viewModel.confirmPassword)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 .padding(.horizontal, 24)
                 
-                Button(action: {
-                    // Здесь будет логика регистрации
-                    dismiss()
-                }) {
-                    Text("Зарегистрироваться")
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.subheadline)
+                        .padding(.horizontal)
                 }
+                
+                Button(action: {
+                    viewModel.register()
+                }) {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Зарегистрироваться")
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(viewModel.isFormValid ? Color.blue : Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
                 .padding(.horizontal, 24)
-                .disabled(email.isEmpty || password.isEmpty || confirmPassword.isEmpty || password != confirmPassword)
+                .disabled(!viewModel.isFormValid || viewModel.isLoading)
                 
                 Spacer()
             }
@@ -52,6 +61,11 @@ struct RegistrationView: View {
                         Image(systemName: "xmark")
                             .foregroundColor(.gray)
                     }
+                }
+            }
+            .onChange(of: viewModel.isRegistrationSuccessful) { success in
+                if success {
+                    dismiss()
                 }
             }
         }

@@ -1,37 +1,55 @@
 import SwiftUI
 
 struct SaveWordView: View {
-    @State private var word: String = ""
-    @State private var translation: String = ""
+    @StateObject private var viewModel = SaveWordViewModel()
     
     var body: some View {
-        VStack {
-            Spacer()
-            
-            VStack(spacing: 20) {
-                TextField("Введите слово", text: $word)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
+        NavigationView {
+            VStack {
+                Spacer()
                 
-                TextField("Введите перевод", text: $translation)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                VStack(spacing: 20) {
+                    TextField("Введите слово", text: $viewModel.word)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+                    
+                    TextField("Введите перевод", text: $viewModel.translation)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+                    
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .font(.subheadline)
+                            .padding(.horizontal)
+                    }
+                    
+                    Button(action: {
+                        viewModel.saveWord()
+                    }) {
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        } else {
+                            Text("Сохранить")
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(viewModel.isFormValid ? Color.blue : Color.gray)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                     .padding(.horizontal)
-                
-                Button(action: {
-                    // Здесь будет логика сохранения
-                }) {
-                    Text("Сохранить")
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(10)
+                    .disabled(!viewModel.isFormValid || viewModel.isLoading)
                 }
-                .padding(.horizontal)
+                .frame(maxWidth: 300)
+                
+                Spacer()
             }
-            .frame(maxWidth: 300)
-            
-            Spacer()
+            .navigationTitle("Добавить слово")
+            .alert("Слово успешно сохранено", isPresented: $viewModel.isWordSaved) {
+                Button("OK", role: .cancel) {}
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import Alamofire
+import Combine
 
 protocol ApiService {
     func register(request: RegisterRequest) async throws -> RegisterResponse
@@ -23,28 +24,86 @@ class DefaultApiService: ApiService {
         NetworkConfig.shared.session
     }
     
+    private func handleResponse<T: Decodable>(_ response: DataResponse<T, AFError>) throws -> T {
+        if let statusCode = response.response?.statusCode {
+            switch statusCode {
+            case 200...299:
+                if let value = response.value {
+                    return value
+                }
+                throw ApiError.invalidResponse
+            case 400:
+                throw ApiError.unauthorized
+            case 401:
+                throw ApiError.unauthorized
+            case 409:
+                throw ApiError.accountExists
+            case 400...499:
+                if let data = response.data,
+                   let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                    throw ApiError.serverError(message: errorResponse.message)
+                }
+                throw ApiError.serverError(message: "Ошибка клиента")
+            case 500...599:
+                throw ApiError.serverError(message: "Ошибка сервера")
+            default:
+                throw ApiError.networkError
+            }
+        } else {
+            throw ApiError.networkError
+        }
+    }
+    
+    private func getHeaders(token: String? = nil) -> HTTPHeaders {
+        var headers: HTTPHeaders = [
+            "Content-Type": "application/json"
+        ]
+        
+        if let token = token {
+            headers["Authorization"] = "Bearer \(token)"
+        }
+        
+        return headers
+    }
+    
     func register(request: RegisterRequest) async throws -> RegisterResponse {
-        try await session.request(
-            baseURL + "/registration",
-            method: .post,
-            parameters: request,
-            encoder: JSONParameterEncoder.default
-        )
-        .validate()
-        .serializingDecodable(RegisterResponse.self)
-        .value
+        do {
+            let response = try await session.request(
+                baseURL + "/registration",
+                method: .post,
+                parameters: request,
+                encoder: JSONParameterEncoder.default
+            )
+            .validate()
+            .serializingDecodable(RegisterResponse.self)
+            .response
+            
+            return try handleResponse(response)
+        } catch let error as ApiError {
+            throw error
+        } catch {
+            throw ApiError.networkError
+        }
     }
     
     func login(request: LoginRequest) async throws -> LoginResponse {
-        try await session.request(
-            baseURL + "/login",
-            method: .post,
-            parameters: request,
-            encoder: JSONParameterEncoder.default
-        )
-        .validate()
-        .serializingDecodable(LoginResponse.self)
-        .value
+        do {
+            let response = try await session.request(
+                baseURL + "/login",
+                method: .post,
+                parameters: request,
+                encoder: JSONParameterEncoder.default
+            )
+            .validate()
+            .serializingDecodable(LoginResponse.self)
+            .response
+            
+            return try handleResponse(response)
+        } catch let error as ApiError {
+            throw error
+        } catch {
+            throw ApiError.networkError
+        }
     }
     
     func saveWord(token: String, request: SaveWordRequest) async throws {
@@ -53,7 +112,7 @@ class DefaultApiService: ApiService {
             method: .post,
             parameters: request,
             encoder: JSONParameterEncoder.default,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(EmptyResponse.self)
@@ -64,7 +123,7 @@ class DefaultApiService: ApiService {
         try await session.request(
             baseURL + "/sorted-random-word",
             method: .get,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(WordResponseRemote.self)
@@ -77,7 +136,7 @@ class DefaultApiService: ApiService {
             method: .post,
             parameters: request,
             encoder: JSONParameterEncoder.default,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(GetWordsResponse.self)
@@ -88,7 +147,7 @@ class DefaultApiService: ApiService {
         try await session.request(
             baseURL + "/word/\(wordId)",
             method: .get,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(WordResponseRemote.self)
@@ -101,7 +160,7 @@ class DefaultApiService: ApiService {
             method: .put,
             parameters: request,
             encoder: JSONParameterEncoder.default,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(EmptyResponse.self)
@@ -112,7 +171,7 @@ class DefaultApiService: ApiService {
         try await session.request(
             baseURL + "/delete-word/\(wordId)",
             method: .delete,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(EmptyResponse.self)
@@ -125,7 +184,7 @@ class DefaultApiService: ApiService {
             method: .put,
             parameters: request,
             encoder: JSONParameterEncoder.default,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(EmptyResponse.self)
@@ -138,7 +197,7 @@ class DefaultApiService: ApiService {
             method: .post,
             parameters: request,
             encoder: JSONParameterEncoder.default,
-            headers: ["Authorization": token]
+            headers: getHeaders(token: token)
         )
         .validate()
         .serializingDecodable(QuizResponse.self)
@@ -147,4 +206,9 @@ class DefaultApiService: ApiService {
 }
 
 // Пустая структура для пустых ответов
-struct EmptyResponse: Decodable {} 
+struct EmptyResponse: Decodable {}
+
+// Структура для парсинга ошибок от сервера
+struct ErrorResponse: Decodable {
+    let message: String
+} 

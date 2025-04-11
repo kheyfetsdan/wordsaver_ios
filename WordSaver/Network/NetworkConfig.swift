@@ -19,6 +19,6 @@ class NetworkConfig {
     }
     
     func getBaseURL() -> String {
-        return UserDefaults.standard.string(forKey: "baseURL") ?? "http://wordsaveriii-e42ab50fe156.herokuapp.com"
+        return UserDefaults.standard.string(forKey: "baseURL") ?? "https://wordsaveriii-e42ab50fe156.herokuapp.com"
     }
 } 

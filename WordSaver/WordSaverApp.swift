@@ -10,9 +10,33 @@ import Alamofire
 
 @main
 struct WordSaverApp: App {
+    @StateObject private var authService = AuthService.shared
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if authService.isAuthenticated {
+                TabView {
+                    SaveWordView()
+                        .tabItem {
+                            Label("Ввод", systemImage: "plus.circle")
+                        }
+                    WordsListView()
+                        .tabItem {
+                            Label("Слова", systemImage: "text.cursor")
+                        }
+                    DictionaryView()
+                        .tabItem {
+                            Label("Словарь", systemImage: "book")
+                        }
+                    
+                    QuizView()
+                        .tabItem {
+                            Label("Квиз", systemImage: "questionmark.circle")
+                        }
+                }
+            } else {
+                ContentView()
+            }
         }
     }
 }
