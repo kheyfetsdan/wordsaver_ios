@@ -12,33 +12,40 @@ struct SaveWordIdRequest: Encodable {
 }
 
 struct GetWordsRequest: Encodable {
+    let sortingParam: String
+    let sortingDirection: String
     let page: Int
     let pageSize: Int
-    let sortType: String
 }
 
 struct GetWordsResponse: Decodable {
-    let words: [WordResponse]
-    let totalPages: Int
+    let wordList: [WordResponseRemote]
+    let total: Int
+    let page: Int
 }
 
-struct WordResponse: Decodable {
+struct WordResponseRemote: Decodable {
     let id: Int
     let word: String
     let translation: String
-    let correctAnswers: Int
-    let incorrectAnswers: Int
+    let success: Int
+    let failed: Int
+    let addedAt: String
 }
 
 struct WordStatRequest: Encodable {
-    let isCorrect: Bool
+    let success: Bool
 }
 
 struct QuizRequest: Encodable {
-    let excludeWordIds: [Int]
+    let previousWord: String
 }
 
 struct QuizResponse: Decodable {
-    let word: WordResponse
-    let options: [String]
-} 
+    let id: Int
+    let word: String
+    let trueTranslation: String
+    let translation1: String
+    let translation2: String
+    let translation3: String
+}

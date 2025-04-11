@@ -12,131 +12,160 @@ struct DictionaryItem: Identifiable {
     let stats: WordStatistics
 }
 
-struct DictionaryView: View {
-    @State private var sortType: SortType = .alphabetical
-    @State private var currentPage = 1
-    @State private var totalPages = 2
-    @State private var selectedItem: DictionaryItem? = nil
-    
-    // Тестовые данные
-    let items = [
-        DictionaryItem(word: "Application", translation: "Приложение", stats: WordStatistics(correct: 2, incorrect: 0)),
-        DictionaryItem(word: "Cope", translation: "Справляться", stats: WordStatistics(correct: 200, incorrect: 0)),
-        DictionaryItem(word: "Gun", translation: "Оружие", stats: WordStatistics(correct: 7, incorrect: 1)),
-        DictionaryItem(word: "Menialtasks", translation: "Черновая работа", stats: WordStatistics(correct: 2, incorrect: 1)),
-        DictionaryItem(word: "Plenty", translation: "Множество", stats: WordStatistics(correct: 4, incorrect: 0))
-    ]
-    
-    enum SortType {
-        case alphabetical, correct, incorrect
-    }
+struct WordCard: View {
+    let word: WordResponseRemote
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Кнопки сортировки
-                HStack(spacing: 12) {
-                    sortButton(title: "А-Я", type: .alphabetical)
-                    sortButton(title: "✓", type: .correct)
-                    sortButton(title: "✗", type: .incorrect)
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                
-                // Список слов
-                ScrollView {
-                    VStack(spacing: 12) {
-                        ForEach(items) { item in
-                            wordCard(item: item)
-                                .onTapGesture {
-                                    selectedItem = item
-                                }
-                        }
-                    }
-                    .padding()
-                }
-                
-                // Пагинация
-                HStack {
-                    Button(action: {
-                        if currentPage > 1 {
-                            currentPage -= 1
-                        }
-                    }) {
-                        Text("Назад")
-                            .foregroundColor(currentPage > 1 ? .blue : .gray)
-                    }
-                    .disabled(currentPage == 1)
-                    
-                    Spacer()
-                    
-                    Text("\(currentPage) из \(totalPages)")
-                        .foregroundColor(.gray)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        if currentPage < totalPages {
-                            currentPage += 1
-                        }
-                    }) {
-                        Text("Вперёд")
-                            .foregroundColor(currentPage < totalPages ? .blue : .gray)
-                    }
-                    .disabled(currentPage == totalPages)
-                }
-                .padding()
-                .background(Color.white)
-            }
-            .navigationTitle("Словарь")
-            .sheet(item: $selectedItem) { item in
-                WordDetailView(item: item)
-            }
-        }
-    }
-    
-    private func sortButton(title: String, type: SortType) -> some View {
-        Button(action: {
-            sortType = type
-        }) {
-            Text(title)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-                .background(sortType == type ? Color.white : Color.clear)
-                .cornerRadius(8)
-        }
-    }
-    
-    private func wordCard(item: DictionaryItem) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(item.word)
-                .font(.headline)
-            Text(item.translation)
-                .foregroundColor(.gray)
-            
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                HStack(spacing: 4) {
-                    Image(systemName: "checkmark")
-                        .foregroundColor(.blue)
-                    Text("\(item.stats.correct)")
-                        .foregroundColor(.blue)
-                }
+                Text(word.word)
+                    .font(.title3)
+                    .fontWeight(.semibold)
                 
                 Spacer()
                 
-                HStack(spacing: 4) {
-                    Image(systemName: "xmark")
+                Text(word.translation)
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+            
+            HStack(spacing: 20) {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("\(word.success)")
+                        .font(.subheadline)
+                        .foregroundColor(.green)
+                }
+                
+                HStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.red)
-                    Text("\(item.stats.incorrect)")
+                    Text("\(word.failed)")
+                        .font(.subheadline)
                         .foregroundColor(.red)
                 }
             }
         }
         .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+    }
+}
+
+struct FilteredWordsList: View {
+    let words: [WordResponseRemote]
+    let searchText: String
+    let isLoading: Bool
+    let currentPage: Int
+    let totalPages: Int
+    let onPreviousPage: () -> Void
+    let onNextPage: () -> Void
+    
+    var filteredWords: [WordResponseRemote] {
+        if searchText.isEmpty {
+            return words
+        }
+        return words.filter { word in
+            word.word.localizedCaseInsensitiveContains(searchText) ||
+            word.translation.localizedCaseInsensitiveContains(searchText)
+        }
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    ForEach(filteredWords, id: \.id) { word in
+                        NavigationLink(destination: WordDetailView(word: word)) {
+                            WordCard(word: word)
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    if isLoading {
+                        ProgressView()
+                            .padding()
+                    }
+                }
+                .padding(.vertical)
+            }
+            
+            HStack {
+                Button(action: onPreviousPage) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                        Text("Назад")
+                    }
+                    .foregroundColor(currentPage > 1 ? .blue : .gray)
+                }
+                .disabled(currentPage == 1)
+                
+                Spacer()
+                
+                Text("Страница \(currentPage) из \(totalPages)")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                Button(action: onNextPage) {
+                    HStack {
+                        Text("Вперед")
+                        Image(systemName: "chevron.right")
+                    }
+                    .foregroundColor(currentPage < totalPages ? .blue : .gray)
+                }
+                .disabled(currentPage == totalPages)
+            }
+            .padding()
+            .background(Color(.systemGray6))
+        }
+    }
+}
+
+struct DictionaryView: View {
+    @StateObject private var viewModel = DictionaryViewModel()
+    @State private var searchText = ""
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                if viewModel.isLoading && viewModel.words.isEmpty {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    FilteredWordsList(
+                        words: viewModel.words,
+                        searchText: searchText,
+                        isLoading: viewModel.isLoading,
+                        currentPage: viewModel.currentPage,
+                        totalPages: viewModel.totalPages,
+                        onPreviousPage: viewModel.previousPage,
+                        onNextPage: viewModel.nextPage
+                    )
+                }
+            }
+            .navigationTitle("Словарь")
+            .searchable(text: $searchText, prompt: "Поиск слов")
+            .refreshable {
+                viewModel.refresh()
+            }
+            .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button("OK", role: .cancel) {
+                    viewModel.errorMessage = nil
+                }
+            } message: {
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                }
+            }
+        }
+        .onAppear {
+            viewModel.loadWords()
+        }
     }
 }
 

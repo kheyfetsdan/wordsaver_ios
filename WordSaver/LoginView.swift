@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct LoginView: View {
-    @State private var email = ""
-    @State private var password = ""
+    @StateObject private var viewModel = LoginViewModel()
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
@@ -13,29 +12,40 @@ struct LoginView: View {
                     .padding(.top, 32)
                 
                 VStack(spacing: 16) {
-                    TextField("Email", text: $email)
+                    TextField("Email", text: $viewModel.email)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .autocapitalization(.none)
                         .keyboardType(.emailAddress)
                     
-                    SecureField("Пароль", text: $password)
+                    SecureField("Пароль", text: $viewModel.password)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                 }
                 .padding(.horizontal, 24)
                 
-                Button(action: {
-                    // Здесь будет логика входа
-                    dismiss()
-                }) {
-                    Text("Войти")
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundColor(.red)
+                        .font(.subheadline)
+                        .padding(.horizontal)
                 }
+                
+                Button(action: {
+                    viewModel.login()
+                }) {
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Войти")
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(viewModel.isFormValid ? Color.blue : Color.gray)
+                .foregroundColor(.white)
+                .cornerRadius(10)
                 .padding(.horizontal, 24)
-                .disabled(email.isEmpty || password.isEmpty)
+                .disabled(!viewModel.isFormValid || viewModel.isLoading)
                 
                 Spacer()
             }
@@ -48,6 +58,11 @@ struct LoginView: View {
                         Image(systemName: "xmark")
                             .foregroundColor(.gray)
                     }
+                }
+            }
+            .onChange(of: viewModel.isLoginSuccessful) { success in
+                if success {
+                    dismiss()
                 }
             }
         }
