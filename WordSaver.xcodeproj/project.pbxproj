@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0B84085A2DA7082C00E2F49B /* Alamofire in Frameworks */ = {isa = PBXBuildFile; productRef = 0B8408592DA7082C00E2F49B /* Alamofire */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		0BCF6B742D9DC5F90009EB76 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0B84085A2DA7082C00E2F49B /* Alamofire in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,12 +77,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0B84085D2DA708F100E2F49B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		0BCF6B5A2D9DC5F80009EB76 = {
 			isa = PBXGroup;
 			children = (
 				0BCF6B652D9DC5F80009EB76 /* WordSaver */,
 				0BCF6B762D9DC5F90009EB76 /* WordSaverTests */,
 				0BCF6B802D9DC5F90009EB76 /* WordSaverUITests */,
+				0B84085D2DA708F100E2F49B /* Frameworks */,
 				0BCF6B642D9DC5F80009EB76 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -112,6 +125,7 @@
 			);
 			name = WordSaver;
 			packageProductDependencies = (
+				0B8408592DA7082C00E2F49B /* Alamofire */,
 			);
 			productName = WordSaver;
 			productReference = 0BCF6B632D9DC5F80009EB76 /* WordSaver.app */;
@@ -195,6 +209,9 @@
 			);
 			mainGroup = 0BCF6B5A2D9DC5F80009EB76;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0B8408582DA7082C00E2F49B /* XCRemoteSwiftPackageReference "Alamofire" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0BCF6B642D9DC5F80009EB76 /* Products */;
 			projectDirPath = "";
@@ -396,7 +413,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"WordSaver/Preview Content\"";
+				DEVELOPMENT_TEAM = XE7NHWFQKE;
 				ENABLE_PREVIEWS = YES;
+				"FRAMEWORK_SEARCH_PATHS[arch=*]" = "$(SRCROOT)/Packages/Alamofire-5.10.2";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -424,7 +443,9 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"WordSaver/Preview Content\"";
+				DEVELOPMENT_TEAM = XE7NHWFQKE;
 				ENABLE_PREVIEWS = YES;
+				"FRAMEWORK_SEARCH_PATHS[arch=*]" = "$(SRCROOT)/Packages/Alamofire-5.10.2";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -552,6 +573,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		0B8408582DA7082C00E2F49B /* XCRemoteSwiftPackageReference "Alamofire" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Alamofire/Alamofire.git";
+			requirement = {
+				kind = exactVersion;
+				version = 5.10.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0B8408592DA7082C00E2F49B /* Alamofire */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 0B8408582DA7082C00E2F49B /* XCRemoteSwiftPackageReference "Alamofire" */;
+			productName = Alamofire;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 0BCF6B5B2D9DC5F80009EB76 /* Project object */;
 }
