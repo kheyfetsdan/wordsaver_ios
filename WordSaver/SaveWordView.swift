@@ -5,25 +5,38 @@ struct SaveWordView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 24) {
                 Spacer()
                 
                 VStack(spacing: 20) {
-                    TextField("Введите слово", text: $viewModel.word)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding(.horizontal)
+                    // Карточка ввода слова
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Слово")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        TextField("Введите слово", text: $viewModel.word)
+                            .textFieldStyle(ModernTextFieldStyle())
+                    }
                     
-                    TextField("Введите перевод", text: $viewModel.translation)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding(.horizontal)
+                    // Карточка ввода перевода
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Перевод")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        TextField("Введите перевод", text: $viewModel.translation)
+                            .textFieldStyle(ModernTextFieldStyle())
+                    }
                     
                     if let errorMessage = viewModel.errorMessage {
                         Text(errorMessage)
-                            .foregroundColor(.red)
                             .font(.subheadline)
-                            .padding(.horizontal)
+                            .foregroundColor(.red)
+                            .padding(.top, 8)
                     }
                     
+                    // Кнопка сохранения
                     Button(action: {
                         viewModel.saveWord()
                     }) {
@@ -32,17 +45,17 @@ struct SaveWordView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         } else {
                             Text("Сохранить")
+                                .font(.headline)
                         }
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
                     .background(viewModel.isFormValid ? Color.blue : Color.gray)
                     .foregroundColor(.white)
-                    .cornerRadius(10)
-                    .padding(.horizontal)
+                    .cornerRadius(12)
                     .disabled(!viewModel.isFormValid || viewModel.isLoading)
                 }
-                .frame(maxWidth: 300)
+                .padding(.horizontal, 24)
                 
                 Spacer()
             }
@@ -51,6 +64,19 @@ struct SaveWordView: View {
                 Button("OK", role: .cancel) {}
             }
         }
+    }
+}
+
+struct ModernTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color(.systemGray4), lineWidth: 1)
+            )
     }
 }
 
