@@ -115,7 +115,7 @@ class DefaultApiService: ApiService {
             headers: getHeaders(token: token)
         )
         .validate()
-        .serializingDecodable(EmptyResponse.self)
+        .serializingString()
         .value
     }
     
@@ -163,7 +163,7 @@ class DefaultApiService: ApiService {
             headers: getHeaders(token: token)
         )
         .validate()
-        .serializingDecodable(EmptyResponse.self)
+        .serializingString()
         .value
     }
     
@@ -174,7 +174,7 @@ class DefaultApiService: ApiService {
             headers: getHeaders(token: token)
         )
         .validate()
-        .serializingDecodable(EmptyResponse.self)
+        .serializingString()
         .value
     }
     
@@ -187,7 +187,7 @@ class DefaultApiService: ApiService {
             headers: getHeaders(token: token)
         )
         .validate()
-        .serializingDecodable(EmptyResponse.self)
+        .serializingString()
         .value
     }
     

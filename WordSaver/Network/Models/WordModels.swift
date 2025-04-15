@@ -24,7 +24,7 @@ struct GetWordsResponse: Decodable {
     let page: Int
 }
 
-struct WordResponseRemote: Decodable {
+struct WordResponseRemote: Codable {
     let id: Int
     let word: String
     let translation: String
