@@ -3,6 +3,7 @@ import SwiftUI
 struct RegistrationView: View {
     @StateObject private var viewModel = RegistrationViewModel()
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var authService = AuthService.shared
     
     var body: some View {
         NavigationView {
@@ -63,8 +64,8 @@ struct RegistrationView: View {
                     }
                 }
             }
-            .onChange(of: viewModel.isRegistrationSuccessful) { success in
-                if success {
+            .onChange(of: authService.isAuthenticated) { isAuthenticated in
+                if isAuthenticated {
                     dismiss()
                 }
             }

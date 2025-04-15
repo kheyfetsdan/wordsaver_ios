@@ -3,6 +3,7 @@ import SwiftUI
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var authService = AuthService.shared
     
     var body: some View {
         NavigationView {
@@ -60,8 +61,8 @@ struct LoginView: View {
                     }
                 }
             }
-            .onChange(of: viewModel.isLoginSuccessful) { success in
-                if success {
+            .onChange(of: authService.isAuthenticated) { isAuthenticated in
+                if isAuthenticated {
                     dismiss()
                 }
             }
