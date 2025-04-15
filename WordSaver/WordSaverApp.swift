@@ -20,7 +20,7 @@ struct WordSaverApp: App {
                         .tabItem {
                             Label("Ввод", systemImage: "plus.circle")
                         }
-                    WordsListView()
+                    RandomWordView()
                         .tabItem {
                             Label("Слова", systemImage: "text.cursor")
                         }

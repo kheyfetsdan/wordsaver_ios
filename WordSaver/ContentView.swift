@@ -17,7 +17,7 @@ struct ContentView: View {
                     Label("Ввод", systemImage: "square.and.pencil")
                 }
             
-            WordsListView()
+            RandomWordView()
                 .tabItem {
                     Label("Слова", systemImage: "list.bullet")
                 }

@@ -1,55 +1,41 @@
 import SwiftUI
 
 struct QuizView: View {
-    @State private var selectedAnswer: Int? = nil
-    @State private var isAnswerCorrect: Bool? = nil
-    
-    let word = "River"
-    let answers = ["Слон", "Яма", "Река", "Самолет"]
-    let correctAnswerIndex = 2
+    @StateObject private var viewModel = QuizViewModel()
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 30) {
-                // Слово для перевода
-                Text(word)
-                    .font(.system(size: 32, weight: .bold))
-                    .padding(.top, 40)
+        VStack(spacing: 20) {
+            if viewModel.isLoading {
+                ProgressView()
+            } else if let error = viewModel.errorMessage {
+                Text(error)
+                    .foregroundColor(.red)
+            } else if let quiz = viewModel.currentQuiz {
+                Text(quiz.word)
+                    .font(.largeTitle)
+                    .padding()
                 
-                // Варианты ответов
-                VStack(spacing: 16) {
-                    ForEach(0..<answers.count, id: \.self) { index in
-                        Button(action: {
-                            selectedAnswer = index
-                            isAnswerCorrect = (index == correctAnswerIndex)
-                        }) {
-                            Text(answers[index])
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 60)
-                                .background(backgroundColor(for: index))
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
+                ForEach(viewModel.shuffledTranslations, id: \.self) { translation in
+                    Button(action: {
+                        Task {
+                            await viewModel.checkAnswer(translation)
                         }
-                        .disabled(selectedAnswer != nil)
+                    }) {
+                        Text(translation)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(viewModel.getButtonColor(for: translation))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
                     }
+                    .disabled(viewModel.isButtonDisabled(for: translation))
                 }
-                .padding(.horizontal)
-                
-                Spacer()
             }
-            .navigationTitle("Квиз")
         }
-    }
-    
-    private func backgroundColor(for index: Int) -> Color {
-        if selectedAnswer == nil {
-            return .blue
-        } else if index == selectedAnswer {
-            return isAnswerCorrect == true ? .green : .red
-        } else if index == correctAnswerIndex && isAnswerCorrect == false {
-            return .green
+        .padding()
+        .task {
+            await viewModel.fetchQuizWord()
         }
-        return .blue.opacity(0.5)
     }
 }
 
