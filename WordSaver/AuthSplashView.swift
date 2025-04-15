@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AuthSplashView: View {
+    @StateObject private var authService = AuthService.shared
     @State private var showLogin = false
     @State private var showRegistration = false
     @Environment(\.dismiss) private var dismiss
@@ -43,12 +44,7 @@ struct AuthSplashView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "xmark")
-                            .foregroundColor(.gray)
-                    }
+                   
                 }
             }
         }

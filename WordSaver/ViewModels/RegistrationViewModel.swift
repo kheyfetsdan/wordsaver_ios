@@ -11,13 +11,13 @@ class RegistrationViewModel: ObservableObject {
     @Published var isRegistrationSuccessful = false
     
     private let apiService: ApiService
-    private let keychainService: KeychainService
+    private let authService: AuthService
     private var cancellables = Set<AnyCancellable>()
     
     init(apiService: ApiService = DefaultApiService(),
-         keychainService: KeychainService = .shared) {
+         authService: AuthService = .shared) {
         self.apiService = apiService
-        self.keychainService = keychainService
+        self.authService = authService
     }
     
     var isFormValid: Bool {
@@ -38,7 +38,7 @@ class RegistrationViewModel: ObservableObject {
         Task {
             do {
                 let response = try await apiService.register(request: request)
-                try keychainService.saveToken(response.token)
+                authService.login(token: response.token)
                 await MainActor.run {
                     isLoading = false
                     isRegistrationSuccessful = true
@@ -58,11 +58,6 @@ class RegistrationViewModel: ObservableObject {
                     case .accountExists:
                         errorMessage = "Аккаунт с таким email уже зарегистрирован"
                     }
-                }
-            } catch let error as KeychainError {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = error.localizedDescription
                 }
             } catch {
                 await MainActor.run {

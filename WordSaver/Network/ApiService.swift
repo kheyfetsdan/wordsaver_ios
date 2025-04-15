@@ -38,6 +38,8 @@ class DefaultApiService: ApiService {
                 throw ApiError.unauthorized
             case 409:
                 throw ApiError.accountExists
+            case 412:
+                throw ApiError.serverError(message: "Недостаточно слов, чтобы начать квиз")
             case 400...499:
                 if let data = response.data,
                    let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
@@ -192,16 +194,24 @@ class DefaultApiService: ApiService {
     }
     
     func getQuizWord(token: String, request: QuizRequest) async throws -> QuizResponse {
-        try await session.request(
-            baseURL + "/quiz",
-            method: .post,
-            parameters: request,
-            encoder: JSONParameterEncoder.default,
-            headers: getHeaders(token: token)
-        )
-        .validate()
-        .serializingDecodable(QuizResponse.self)
-        .value
+        do {
+            let response = try await session.request(
+                baseURL + "/quiz",
+                method: .post,
+                parameters: request,
+                encoder: JSONParameterEncoder.default,
+                headers: getHeaders(token: token)
+            )
+            .validate()
+            .serializingDecodable(QuizResponse.self)
+            .response
+            
+            return try handleResponse(response)
+        } catch let error as ApiError {
+            throw error
+        } catch {
+            throw ApiError.networkError
+        }
     }
 }
 

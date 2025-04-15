@@ -2,6 +2,11 @@ import SwiftUI
 
 struct SaveWordView: View {
     @StateObject private var viewModel = SaveWordViewModel()
+    @FocusState private var focusedField: Field?
+    
+    enum Field {
+        case word, translation
+    }
     
     var body: some View {
         NavigationView {
@@ -17,6 +22,7 @@ struct SaveWordView: View {
                         
                         TextField("Введите слово", text: $viewModel.word)
                             .textFieldStyle(ModernTextFieldStyle())
+                            .focused($focusedField, equals: .word)
                     }
                     
                     // Карточка ввода перевода
@@ -27,6 +33,7 @@ struct SaveWordView: View {
                         
                         TextField("Введите перевод", text: $viewModel.translation)
                             .textFieldStyle(ModernTextFieldStyle())
+                            .focused($focusedField, equals: .translation)
                     }
                     
                     if let errorMessage = viewModel.errorMessage {
@@ -40,12 +47,15 @@ struct SaveWordView: View {
                     Button(action: {
                         viewModel.saveWord()
                     }) {
-                        if viewModel.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text("Сохранить")
-                                .font(.headline)
+                        ZStack {
+                            Color.clear
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Сохранить")
+                                    .font(.headline)
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -61,7 +71,17 @@ struct SaveWordView: View {
             }
             .navigationTitle("Добавить слово")
             .alert("Слово успешно сохранено", isPresented: $viewModel.isWordSaved) {
-                Button("OK", role: .cancel) {}
+                Button("OK", role: .cancel) {
+                    viewModel.word = ""
+                    viewModel.translation = ""
+                }
+            }
+            .onChange(of: viewModel.isWordSaved) { oldValue, newValue in
+                if !newValue {
+                    DispatchQueue.main.asyncAfter(deadline: .now()) {
+                        focusedField = nil
+                    }
+                }
             }
         }
     }
