@@ -60,8 +60,7 @@ struct FilteredWordsList: View {
     let isLoading: Bool
     let currentPage: Int
     let totalPages: Int
-    let onPreviousPage: () -> Void
-    let onNextPage: () -> Void
+    let onLoadMore: () -> Void
     
     var filteredWords: [WordResponseRemote] {
         if searchText.isEmpty {
@@ -74,53 +73,27 @@ struct FilteredWordsList: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(filteredWords, id: \.id) { word in
-                        NavigationLink(destination: WordDetailView(word: word)) {
-                            WordCard(word: word)
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                ForEach(filteredWords, id: \.id) { word in
+                    NavigationLink(destination: WordDetailView(word: word)) {
+                        WordCard(word: word)
+                    }
+                }
+                .padding(.horizontal)
+                
+                if isLoading {
+                    ProgressView()
+                        .padding()
+                } else if currentPage < totalPages {
+                    Color.clear
+                        .frame(height: 1)
+                        .onAppear {
+                            onLoadMore()
                         }
-                    }
-                    .padding(.horizontal)
-                    
-                    if isLoading {
-                        ProgressView()
-                            .padding()
-                    }
                 }
-                .padding(.vertical)
             }
-            
-            HStack {
-                Button(action: onPreviousPage) {
-                    HStack {
-                        Image(systemName: "chevron.left")
-                        Text("Назад")
-                    }
-                    .foregroundColor(currentPage > 1 ? .blue : .gray)
-                }
-                .disabled(currentPage == 1)
-                
-                Spacer()
-                
-                Text("Страница \(currentPage) из \(totalPages)")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                
-                Spacer()
-                
-                Button(action: onNextPage) {
-                    HStack {
-                        Text("Вперед")
-                        Image(systemName: "chevron.right")
-                    }
-                    .foregroundColor(currentPage < totalPages ? .blue : .gray)
-                }
-                .disabled(currentPage == totalPages)
-            }
-            .padding()
-            .background(Color(.systemGray6))
+            .padding(.vertical)
         }
     }
 }
@@ -187,8 +160,7 @@ struct DictionaryView: View {
                         isLoading: viewModel.isLoading,
                         currentPage: viewModel.currentPage,
                         totalPages: viewModel.totalPages,
-                        onPreviousPage: viewModel.previousPage,
-                        onNextPage: viewModel.nextPage
+                        onLoadMore: viewModel.nextPage
                     )
                 }
             }

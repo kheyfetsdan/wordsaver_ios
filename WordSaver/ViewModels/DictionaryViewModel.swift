@@ -11,7 +11,7 @@ class DictionaryViewModel: ObservableObject {
     @Published var sortingParam: String = "word"
     @Published var sortingDirection: String = "asc"
     
-    private let pageSize = 5
+    private let pageSize = 10
     private let apiService: ApiService
     private let authService: AuthService
     private var cancellables = Set<AnyCancellable>()
@@ -41,7 +41,11 @@ class DictionaryViewModel: ObservableObject {
                 do {
                     let response = try await apiService.getWordsByUser(token: token, request: request)
                     await MainActor.run {
-                        words = response.wordList
+                        if currentPage == 1 {
+                            words = response.wordList
+                        } else {
+                            words.append(contentsOf: response.wordList)
+                        }
                         totalPages = calculateTotalPages(total: response.total, pageSize: pageSize)
                         hasMorePages = currentPage < totalPages
                         isLoading = false
