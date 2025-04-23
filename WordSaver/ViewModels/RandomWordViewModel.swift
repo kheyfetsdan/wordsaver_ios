@@ -51,14 +51,7 @@ class RandomWordViewModel: ObservableObject {
     }
     
     @MainActor
-    func fetchRandomWord() async {
-        // Проверяем, есть ли сохраненное слово и был ли на него ответ
-        if let savedWord = loadSavedWord(),
-           !userDefaults.bool(forKey: hasAnsweredKey) {
-            currentWord = savedWord
-            return
-        }
-        
+    func forceFetchRandomWord() async {
         isLoading = true
         errorMessage = nil
         showTranslation = false
@@ -75,6 +68,18 @@ class RandomWordViewModel: ObservableObject {
         }
         
         isLoading = false
+    }
+    
+    @MainActor
+    func fetchRandomWord() async {
+        // Проверяем, есть ли сохраненное слово и был ли на него ответ
+        if let savedWord = loadSavedWord(),
+           !userDefaults.bool(forKey: hasAnsweredKey) {
+            currentWord = savedWord
+            return
+        }
+        
+        await forceFetchRandomWord()
     }
     
     @MainActor
