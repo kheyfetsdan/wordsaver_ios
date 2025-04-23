@@ -41,7 +41,7 @@ struct QuizRequest: Encodable {
     let previousWord: String
 }
 
-struct QuizResponse: Decodable {
+struct QuizResponse: Codable {
     let id: Int
     let word: String
     let trueTranslation: String

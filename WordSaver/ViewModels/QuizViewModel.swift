@@ -9,16 +9,58 @@ class QuizViewModel: ObservableObject {
     @Published var selectedTranslation: String?
     @Published var showNextWord: Bool = false
     @Published var shuffledTranslations: [String] = []
+    @Published var timeRemaining: Int = 3
     
     private let apiService: ApiService
     private let authService: AuthService
     private var timer: Timer?
     private let userDefaults = UserDefaults.standard
     private let previousWordKey = "previousQuizWord"
+    private let hasAnsweredKey = "hasAnsweredQuiz"
     
     init(apiService: ApiService = DefaultApiService(), authService: AuthService = .shared) {
         self.apiService = apiService
         self.authService = authService
+        
+        // Загружаем сохраненное слово при инициализации
+        if let savedWord = loadSavedWord() {
+            currentQuiz = savedWord
+            shuffledTranslations = loadShuffledTranslations()
+        }
+    }
+    
+    private func loadSavedWord() -> QuizResponse? {
+        guard let data = userDefaults.data(forKey: previousWordKey),
+              let word = try? JSONDecoder().decode(QuizResponse.self, from: data) else {
+            return nil
+        }
+        return word
+    }
+    
+    private func loadShuffledTranslations() -> [String] {
+        guard let data = userDefaults.data(forKey: "shuffledTranslations"),
+              let translations = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+        return translations
+    }
+    
+    private func saveCurrentWord() {
+        if let word = currentQuiz,
+           let data = try? JSONEncoder().encode(word) {
+            userDefaults.set(data, forKey: previousWordKey)
+            userDefaults.set(false, forKey: hasAnsweredKey)
+            
+            if let translationsData = try? JSONEncoder().encode(shuffledTranslations) {
+                userDefaults.set(translationsData, forKey: "shuffledTranslations")
+            }
+        }
+    }
+    
+    private func clearSavedWord() {
+        userDefaults.removeObject(forKey: previousWordKey)
+        userDefaults.removeObject(forKey: hasAnsweredKey)
+        userDefaults.removeObject(forKey: "shuffledTranslations")
     }
     
     private func getPreviousWord() -> String {
@@ -31,10 +73,19 @@ class QuizViewModel: ObservableObject {
     
     @MainActor
     func fetchQuizWord() async {
+        // Проверяем, есть ли сохраненное слово и был ли на него ответ
+        if let savedWord = loadSavedWord(),
+           !userDefaults.bool(forKey: hasAnsweredKey) {
+            currentQuiz = savedWord
+            shuffledTranslations = loadShuffledTranslations()
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
         selectedTranslation = nil
         showNextWord = false
+        timeRemaining = 3
         
         do {
             let token = try authService.getToken()
@@ -51,6 +102,9 @@ class QuizViewModel: ObservableObject {
                 var translations = [quiz.trueTranslation, quiz.translation1, quiz.translation2, quiz.translation3]
                 translations.shuffle()
                 shuffledTranslations = translations
+                
+                // Сохраняем текущее состояние
+                saveCurrentWord()
             }
         } catch let error as ApiError {
             switch error {
@@ -84,11 +138,22 @@ class QuizViewModel: ObservableObject {
             )
             
             if isCorrect {
-                // Запускаем таймер на 3 секунды для следующего слова
+                showNextWord = true
+                timeRemaining = 3
+                userDefaults.set(true, forKey: hasAnsweredKey)
+                
+                // Запускаем таймер обратного отсчета
                 timer?.invalidate()
-                timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
+                timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
                     Task { @MainActor in
-                        await self?.fetchQuizWord()
+                        guard let self = self else { return }
+                        if self.timeRemaining > 0 {
+                            self.timeRemaining -= 1
+                        } else {
+                            self.timer?.invalidate()
+                            self.timer = nil
+                            await self.fetchQuizWord()
+                        }
                     }
                 }
             }
