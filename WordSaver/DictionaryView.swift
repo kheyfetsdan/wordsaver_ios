@@ -132,6 +132,50 @@ struct DictionaryView: View {
     var body: some View {
         NavigationView {
             VStack {
+                HStack {
+                    Menu {
+                        Button(action: { viewModel.toggleSorting(param: "word") }) {
+                            HStack {
+                                Text("По слову")
+                                if viewModel.sortingParam == "word" {
+                                    Image(systemName: viewModel.sortingDirection == "asc" ? "arrow.up" : "arrow.down")
+                                }
+                            }
+                        }
+                        
+                        Button(action: { viewModel.toggleSorting(param: "success") }) {
+                            HStack {
+                                Text("По успешным ответам")
+                                if viewModel.sortingParam == "success" {
+                                    Image(systemName: viewModel.sortingDirection == "asc" ? "arrow.up" : "arrow.down")
+                                }
+                            }
+                        }
+                        
+                        Button(action: { viewModel.toggleSorting(param: "failed") }) {
+                            HStack {
+                                Text("По ошибкам")
+                                if viewModel.sortingParam == "failed" {
+                                    Image(systemName: viewModel.sortingDirection == "asc" ? "arrow.up" : "arrow.down")
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text("Сортировка")
+                            Image(systemName: "chevron.down")
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                    }
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
                 if viewModel.isLoading && viewModel.words.isEmpty {
                     ProgressView()
                         .scaleEffect(1.5)

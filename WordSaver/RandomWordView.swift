@@ -26,7 +26,7 @@ struct RandomWordView: View {
                     
                     // Поле ввода перевода
                     TextField("Введите перевод", text: $viewModel.translation)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .textFieldStyle(ModernTextFieldStyle())
                         .padding(.horizontal)
                     
                     // Кнопки

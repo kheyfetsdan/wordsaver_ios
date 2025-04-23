@@ -8,6 +8,8 @@ class DictionaryViewModel: ObservableObject {
     @Published var currentPage = 1
     @Published var hasMorePages = true
     @Published var totalPages = 0
+    @Published var sortingParam: String = "word"
+    @Published var sortingDirection: String = "asc"
     
     private let pageSize = 5
     private let apiService: ApiService
@@ -29,8 +31,8 @@ class DictionaryViewModel: ObservableObject {
             errorMessage = nil
             
             let request = GetWordsRequest(
-                sortingParam: "word",
-                sortingDirection: "asc",
+                sortingParam: sortingParam,
+                sortingDirection: sortingDirection,
                 page: currentPage,
                 pageSize: pageSize
             )
@@ -92,5 +94,15 @@ class DictionaryViewModel: ObservableObject {
     
     func calculateTotalPages(total: Int, pageSize: Int) -> Int {
         return (total + pageSize - 1) / pageSize
+    }
+    
+    func toggleSorting(param: String) {
+        if sortingParam == param {
+            sortingDirection = sortingDirection == "asc" ? "desc" : "asc"
+        } else {
+            sortingParam = param
+            sortingDirection = "asc"
+        }
+        refresh()
     }
 }
