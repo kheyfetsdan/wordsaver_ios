@@ -25,79 +25,58 @@ class DictionaryViewModel: ObservableObject {
     func loadWords() {
         guard !isLoading else { return }
         
-        do {
-            let token = try authService.getToken()
-            isLoading = true
-            errorMessage = nil
-            
-            let request = GetWordsRequest(
-                sortingParam: sortingParam,
-                sortingDirection: sortingDirection,
-                page: currentPage,
-                pageSize: pageSize
-            )
-            
-            Task {
-                do {
-                    let response = try await apiService.getWordsByUser(token: token, request: request)
-                    await MainActor.run {
-                        if currentPage == 1 {
-                            words = response.wordList
-                        } else {
-                            words.append(contentsOf: response.wordList)
-                        }
-                        totalPages = calculateTotalPages(total: response.total, pageSize: pageSize)
-                        hasMorePages = currentPage < totalPages
-                        isLoading = false
-                    }
-                } catch let error as ApiError {
-                    await MainActor.run {
-                        isLoading = false
-                        switch error {
-                        case .networkError:
-                            errorMessage = "Ошибка сети. Проверьте подключение к интернету"
-                        case .serverError(let message):
-                            errorMessage = message
-                        case .unauthorized:
-                            errorMessage = "Ошибка авторизации"
-                        case .invalidResponse:
-                            errorMessage = "Неверный ответ от сервера"
-                        case .accountExists:
-                            errorMessage = "Ошибка при загрузке слов"
-                        }
-                    }
-                } catch {
-                    await MainActor.run {
-                        isLoading = false
-                        errorMessage = "Произошла неизвестная ошибка: \(error.localizedDescription)"
-                    }
-                }
+        isLoading = true
+        currentPage = 1
+        hasMorePages = true
+        
+        Task { @MainActor in
+            do {
+                let token = try authService.getToken()
+                let request = GetWordsRequest(
+                    sortingParam: sortingParam,
+                    sortingDirection: sortingDirection,
+                    page: currentPage,
+                    pageSize: pageSize
+                )
+                
+                let response = try await apiService.getWordsByUser(token: token, request: request)
+                words = response.wordList
+                totalPages = (response.total + pageSize - 1) / pageSize
+                hasMorePages = currentPage < totalPages
+            } catch {
+                errorMessage = error.localizedDescription
             }
-        } catch {
-            errorMessage = "Ошибка авторизации"
+            
+            isLoading = false
         }
     }
     
-    func nextPage() {
-        guard hasMorePages else { return }
+    func loadMoreWords() {
+        guard !isLoading && hasMorePages else { return }
+        
+        isLoading = true
         currentPage += 1
-        loadWords()
-    }
-    
-    func previousPage() {
-        guard currentPage > 1 else { return }
-        currentPage -= 1
-        loadWords()
-    }
-    
-    func refresh() {
-        currentPage = 1
-        hasMorePages = true
-        loadWords()
-    }
-    
-    func calculateTotalPages(total: Int, pageSize: Int) -> Int {
-        return (total + pageSize - 1) / pageSize
+        
+        Task { @MainActor in
+            do {
+                let token = try authService.getToken()
+                let request = GetWordsRequest(
+                    sortingParam: sortingParam,
+                    sortingDirection: sortingDirection,
+                    page: currentPage,
+                    pageSize: pageSize
+                )
+                
+                let response = try await apiService.getWordsByUser(token: token, request: request)
+                words.append(contentsOf: response.wordList)
+                hasMorePages = currentPage < totalPages
+            } catch {
+                errorMessage = error.localizedDescription
+                currentPage -= 1
+            }
+            
+            isLoading = false
+        }
     }
     
     func toggleSorting(param: String) {
@@ -107,6 +86,6 @@ class DictionaryViewModel: ObservableObject {
             sortingParam = param
             sortingDirection = "asc"
         }
-        refresh()
+        loadWords()
     }
 }

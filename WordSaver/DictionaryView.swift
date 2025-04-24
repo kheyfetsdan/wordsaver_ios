@@ -16,41 +16,50 @@ struct WordCard: View {
     let word: WordResponseRemote
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(word.word)
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                Text(word.translation)
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-            }
-            
-            HStack(spacing: 20) {
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                    Text("\(word.success)")
-                        .font(.subheadline)
-                        .foregroundColor(.green)
+        NavigationLink(destination: WordDetailView(word: word)) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(word.word)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                        
+                        Text(word.translation)
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 14, weight: .semibold))
                 }
                 
-                HStack(spacing: 6) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.red)
-                    Text("\(word.failed)")
-                        .font(.subheadline)
-                        .foregroundColor(.red)
+                HStack(spacing: 20) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("\(word.success)")
+                            .font(.subheadline)
+                            .foregroundColor(.green)
+                    }
+                    
+                    HStack(spacing: 6) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.red)
+                        Text("\(word.failed)")
+                            .font(.subheadline)
+                            .foregroundColor(.red)
+                    }
                 }
             }
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -76,11 +85,9 @@ struct FilteredWordsList: View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(filteredWords, id: \.id) { word in
-                    NavigationLink(destination: WordDetailView(word: word)) {
-                        WordCard(word: word)
-                    }
+                    WordCard(word: word)
+                        .padding(.horizontal)
                 }
-                .padding(.horizontal)
                 
                 if isLoading {
                     ProgressView()
@@ -101,76 +108,82 @@ struct FilteredWordsList: View {
 struct DictionaryView: View {
     @StateObject private var viewModel = DictionaryViewModel()
     @State private var searchText = ""
+    @State private var showingSortMenu = false
     
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 0) {
+                // Search Bar
                 HStack {
-                    Menu {
-                        Button(action: { viewModel.toggleSorting(param: "word") }) {
-                            HStack {
-                                Text("По слову")
-                                if viewModel.sortingParam == "word" {
-                                    Image(systemName: viewModel.sortingDirection == "asc" ? "arrow.up" : "arrow.down")
-                                }
-                            }
-                        }
-                        
-                        Button(action: { viewModel.toggleSorting(param: "success") }) {
-                            HStack {
-                                Text("По успешным ответам")
-                                if viewModel.sortingParam == "success" {
-                                    Image(systemName: viewModel.sortingDirection == "asc" ? "arrow.up" : "arrow.down")
-                                }
-                            }
-                        }
-                        
-                        Button(action: { viewModel.toggleSorting(param: "failed") }) {
-                            HStack {
-                                Text("По ошибкам")
-                                if viewModel.sortingParam == "failed" {
-                                    Image(systemName: viewModel.sortingDirection == "asc" ? "arrow.up" : "arrow.down")
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            Text("Сортировка")
-                            Image(systemName: "chevron.down")
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
-                    }
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.gray)
                     
-                    Spacer()
+                    TextField("Поиск...", text: $searchText)
+                        .textFieldStyle(PlainTextFieldStyle())
+                    
+                    if !searchText.isEmpty {
+                        Button(action: {
+                            searchText = ""
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
+                .padding(12)
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
                 .padding(.horizontal)
-                .padding(.top, 8)
                 
+                // Sort Button
+                Button(action: {
+                    showingSortMenu = true
+                }) {
+                    HStack {
+                        Image(systemName: "arrow.up.arrow.down")
+                        Text(getSortTitle())
+                        if viewModel.sortingParam != "word" {
+                            Image(systemName: viewModel.sortingDirection == "asc" ? "arrow.up" : "arrow.down")
+                        }
+                    }
+                    .foregroundColor(.blue)
+                    .padding(.vertical, 8)
+                }
+                .confirmationDialog("Сортировка", isPresented: $showingSortMenu) {
+                    Button("По слову") {
+                        viewModel.toggleSorting(param: "word")
+                    }
+                    Button("По успешным ответам") {
+                        viewModel.toggleSorting(param: "success")
+                    }
+                    Button("По ошибкам") {
+                        viewModel.toggleSorting(param: "failed")
+                    }
+                }
+                
+                // Words List
+                FilteredWordsList(
+                    words: viewModel.words,
+                    searchText: searchText,
+                    isLoading: viewModel.isLoading,
+                    currentPage: viewModel.currentPage,
+                    totalPages: viewModel.totalPages,
+                    onLoadMore: viewModel.loadMoreWords
+                )
+            }
+            .navigationTitle("Словарь")
+            .navigationBarTitleDisplayMode(.inline)
+            .task {
+                viewModel.loadWords()
+            }
+            .overlay {
                 if viewModel.isLoading && viewModel.words.isEmpty {
                     ProgressView()
                         .scaleEffect(1.5)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    FilteredWordsList(
-                        words: viewModel.words,
-                        searchText: searchText,
-                        isLoading: viewModel.isLoading,
-                        currentPage: viewModel.currentPage,
-                        totalPages: viewModel.totalPages,
-                        onLoadMore: viewModel.nextPage
-                    )
                 }
             }
-            .navigationTitle("Словарь")
-            .searchable(text: $searchText, prompt: "Поиск слов")
-            .refreshable {
-                viewModel.refresh()
-            }
             .alert("Ошибка", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("OK", role: .cancel) {
+                Button("OK") {
                     viewModel.errorMessage = nil
                 }
             } message: {
@@ -179,8 +192,18 @@ struct DictionaryView: View {
                 }
             }
         }
-        .onAppear {
-            viewModel.loadWords()
+    }
+    
+    private func getSortTitle() -> String {
+        switch viewModel.sortingParam {
+        case "word":
+            return "По слову"
+        case "success":
+            return "По успешным ответам"
+        case "failed":
+            return "По ошибкам"
+        default:
+            return "Сортировка"
         }
     }
 }
